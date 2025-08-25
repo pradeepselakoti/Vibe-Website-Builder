@@ -1,0 +1,17 @@
+# This is a config for E2B sandbox template.
+# You can use template ID (vy54oab55v11ib7cbc4k) or template name (vibe-nextjs-prdeep) to create a sandbox:
+
+# Python SDK
+# from e2b import Sandbox, AsyncSandbox
+# sandbox = Sandbox("vibe-nextjs-prdeep") # Sync sandbox
+# sandbox = await AsyncSandbox.create("vibe-nextjs-prdeep") # Async sandbox
+
+# JS SDK
+# import { Sandbox } from 'e2b'
+# const sandbox = await Sandbox.create('vibe-nextjs-prdeep')
+
+team_id = "12fcd9f7-6004-45f0-9056-747f2d7211e5"
+start_cmd = "/compile_page.sh"
+dockerfile = "e2b.Dockerfile"
+template_name = "vibe-nextjs-prdeep"
+template_id = "vy54oab55v11ib7cbc4k"
