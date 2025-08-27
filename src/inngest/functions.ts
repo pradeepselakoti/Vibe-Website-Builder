@@ -24,7 +24,7 @@ export const codeAgentFunction = inngest.createFunction(
       name: "code-agent",
       description: "An expert coding agent",
       system: PROMPT,
-      model: gemini({ model: "gemini-2.0-flash-exp" }),
+      model: gemini({ model:"gemini-2.0-flash" }),
       tools: [
         createTool({
           name: "terminal",
@@ -161,6 +161,7 @@ export const codeAgentFunction = inngest.createFunction(
       
       return await prisma.message.create({
         data:{
+          projectId:event.data.projectId,
           content:"Something went wrong. Please try again.",
           role:"ASSISTANT",
           type:"ERROR",
@@ -170,6 +171,7 @@ export const codeAgentFunction = inngest.createFunction(
       }
       return await prisma.message.create({
         data: {
+          projectId:event.data.projectId,
           content: result.state.data.summary,
           role:"ASSISTANT",
           type:"RESULT",
