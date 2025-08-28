@@ -38,7 +38,7 @@ export const MessageForm = ({ projectId }: Props) => {
       form.reset();
       queryClient.invalidateQueries(
         trpc.messages.getMany.queryOptions({projectId}),
-      )
+      );
     },
     onError: (error) =>{
       toast.error(error.message);
