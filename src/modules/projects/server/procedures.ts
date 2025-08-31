@@ -6,6 +6,16 @@ import { z } from "zod"
 import { TRPCError } from "@trpc/server";
 
 export const projectsRouter = createTRPCRouter({
+    getMany: baseProcedure
+    .query(async () => {
+        const projects = await prisma.project.findMany({
+            orderBy: {
+                updatedAt: "desc",
+            },
+        });
+        return projects;
+    }),
+    
     getOne: baseProcedure
     .input(z.object({
         id:z.string().min(1, {message: "Id is required"}),

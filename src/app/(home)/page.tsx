@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { ProjectForm } from "@/modules/home/ui/components/project-form";
+import { ProjectsList } from "@/modules/home/ui/components/project-list";
 
 
 
@@ -31,6 +32,7 @@ const Page = () => {
       </div>
         
       </section>
+      <ProjectsList />
 
     </div>
   );

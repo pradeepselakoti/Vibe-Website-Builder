@@ -13,6 +13,7 @@ import { useTRPC } from "@/trpc/client";
 import { Button } from "@/components/ui/button";
 import { Form, FormField } from "@/components/ui/form";
 import { toast } from "sonner";
+import { PROJECT_TEMPLATES } from "../../constants";
 
 const formSchema = z.object({
   value: z
@@ -48,12 +49,20 @@ export const ProjectForm = () => {
       value: values.value,
     });
   };
+  const onSelect = (value: string) =>{
+    form.setValue("value", value,{
+      shouldDirty: true,
+      shouldValidate:true,
+      shouldTouch: true,
+    })
+  }
 
   const isPending = createProject.isPending;
   const isButtonDisabled = isPending || !form.formState.isValid;
 
   return (
     <Form {...form}>
+      <section className="space-y-6">
       <form
         onSubmit={form.handleSubmit(onSubmit)}
         className={cn(
@@ -105,6 +114,21 @@ export const ProjectForm = () => {
           </Button>
         </div>
       </form>
+      <div className="flex-wrap justify-center gap-2 hidden md:flex max-w-3xl">
+        {PROJECT_TEMPLATES.map((template)=>(
+          <Button 
+              key={template.title}
+              variant="outline"
+              size="sm"
+              className="bg-white dark:bg-sidebar"
+              onClick={()=> onSelect(template.prompt)}
+              >
+                {template.emoji} {template.title}
+              </Button>
+        ))}
+
+      </div>
+      </section>
     </Form>
   );
 };
