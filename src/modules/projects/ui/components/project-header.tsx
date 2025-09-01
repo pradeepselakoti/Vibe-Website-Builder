@@ -31,10 +31,21 @@ interface Props {
 export const ProjectHeader = ({ projectId }: Props) => {
     const trpc = useTRPC();
     
-    // Use tRPC's built-in suspense query instead
-    const { data: project } = trpc.projects.getOne.useSuspenseQuery({ id: projectId });
+    // Use the correct tRPC query pattern
+    const { data: project } = trpc.projects.getOne.useQuery({ id: projectId });
 
     const { setTheme, theme } = useTheme();
+
+    if (!project) {
+        return (
+            <header className="p-2 flex justify-between items-center border-b">
+                <div className="flex items-center gap-2 pl-2">
+                    <Image src="/logo.svg" alt="Vibe" width={18} height={18} />
+                    <span className="text-sm font-medium">Loading...</span>
+                </div>
+            </header>
+        );
+    }
 
     return (
         <header className="p-2 flex justify-between items-center border-b">

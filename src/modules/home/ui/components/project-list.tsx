@@ -1,65 +1,59 @@
-"use client"
+"use client";
 
 import Link from "next/link";
-import Image from "next/image";
-import { formatDistanceToNow } from "date-fns";
-import { useQuery } from "@tanstack/react-query";
-
+import { format } from "date-fns";
 import { useTRPC } from "@/trpc/client";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useUser } from "@clerk/nextjs";
+import { FolderIcon, ClockIcon } from "lucide-react";
+import { Project } from "@/generated/prisma";
 
 export const ProjectsList = () => {
-    const trpc = useTRPC();
-    const { user } = useUser();
-    const { data: projects } = useQuery(trpc.projects.getMany.queryOptions());
+  const trpc = useTRPC();
+  
+  const { data: projects } = useSuspenseQuery(
+    trpc.projects.getMany.queryOptions()
+  );
 
-    if(!user) return
+  // Type assertion since we know the shape from tRPC
+  const typedProjects = projects as Project[];
 
+  if (typedProjects.length === 0) {
     return (
-        <div className="w-full bg-white dark:bg-sidebar rounded-xl p-8 border flex flex-col gap-y-6 sm:gap-y-4" >
-            <h2 className="text-2xl font-semibold">
-                {user?.firstName}&apos;s Vibes
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                {projects?.length === 0 && (
-                    <div className="col-span-full text-center">
-                        <p className="text-sm text-muted-foreground">
-                            No projects found
-                        </p>
-                    </div>
-                )}
-                {projects?.map((project) => (
-                    <Button
-                        key={project.id}
-                        variant="outline"
-                        className="font-normal h-auto justify-start w-full text-start p-4"
-                        asChild
-                    >
-                        <Link href={`/projects/${project.id}`}>
-                            <div className="flex items-center gap-x-4">
-                                <Image
-                                    src="/logo.svg"
-                                    alt="Vibe"
-                                    width={32}
-                                    height={32}
-                                    className="object-contain"
-                                />
-                                <div className="flex flex-col">
-                                    <h3 className="truncate font-medium">
-                                        {project.name}
-                                    </h3>
-                                    <p className="text-sm text-muted-foreground">
-                                        {formatDistanceToNow(project.updatedAt, {
-                                            addSuffix: true,
-                                        })}
-                                    </p>
-                                </div>
-                            </div>
-                        </Link>
-                    </Button>
-                ))}
-            </div>
+      <section className="pb-20">
+        <div className="text-center text-muted-foreground">
+          <p>No projects yet. Create your first one above!</p>
         </div>
-    )
-}
+      </section>
+    );
+  }
+
+  return (
+    <section className="pb-20">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {typedProjects.map((project: Project) => (
+          <Card key={project.id} className="hover:shadow-md transition-shadow">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <FolderIcon className="size-5" />
+                {project.name}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+                <ClockIcon className="size-4" />
+                {format(project.updatedAt, "MMM dd, yyyy")}
+              </div>
+              <Button asChild size="sm" className="w-full">
+                <Link href={`/projects/${project.id}`}>
+                  Open Project
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </section>
+  );
+};
