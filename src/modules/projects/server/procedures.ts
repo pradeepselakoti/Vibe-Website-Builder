@@ -1,70 +1,81 @@
 import { inngest } from "@/inngest/client";
 import { prisma } from "@/lib/db";
-import {generateSlug} from "random-word-slugs";
-import {baseProcedure, createTRPCRouter} from "@/trpc/init"
-import { z } from "zod"
+import { generateSlug } from "random-word-slugs";
+import { protectedProcedure, createTRPCRouter } from "@/trpc/init";
+import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 
-export const projectsRouter = createTRPCRouter({
-    getMany: baseProcedure
-    .query(async () => {
-        const projects = await prisma.project.findMany({
-            orderBy: {
-                updatedAt: "desc",
-            },
-        });
-        return projects;
-    }),
-    
-    getOne: baseProcedure
-    .input(z.object({
-        id:z.string().min(1, {message: "Id is required"}),
-    }))
-    .query(async({ input })=>{
-        const existingProject = await prisma.project.findUnique({
-            where:{
-                id: input.id,
-            },
-       
-        });
+export const projectRouter = createTRPCRouter({
+    getOne: protectedProcedure
+        .input(z.object({
+            id: z.string().min(1, { message: "Id is required" }),
+        }))
+        .query(async ({ input, ctx }) => {
+            const existingProject = await prisma.project.findUnique({
+                where: {
+                    id: input.id,
+                    // Remove userId from where clause if it's not part of unique constraint
+                },
+            });
 
-        if(!existingProject){
-            throw new TRPCError({ code: "NOT_FOUND",message:"Proect not found"});
-        }
-        return existingProject;
-    }),
-    create: baseProcedure
-       .input(
-        z.object({
-            value:z.string()
-            .min(1, {message: "value is required"})
-            .max(10000, {message: "value is too long"})
+            if (!existingProject) {
+                throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+            }
+            
+            // Check if user owns the project
+            if (existingProject.userId !== ctx.auth.userId) {
+                throw new TRPCError({ code: "FORBIDDEN", message: "Access denied" });
+            }
+            
+            return existingProject;
         }),
-       )
-       .mutation(async({input})=>{
-        const createdProject = await prisma.project.create({
-            data:{
-                name:generateSlug(2,{
-                    format: "kebab",
-                }),
-                messages: {
-                    create: {
-                    content:input.value,
-                    role:"USER",
-                    type:"RESULT",
-                    
+
+    getMany: protectedProcedure
+        .query(async ({ ctx }) => {
+            const projects = await prisma.project.findMany({
+                where: {
+                    userId: ctx.auth.userId, // Fixed: use userId instead of id
+                },
+                orderBy: {
+                    updatedAt: "desc",
+                },
+            });
+            return projects;
+        }),
+
+    create: protectedProcedure
+        .input(
+            z.object({
+                value: z.string()
+                    .min(1, { message: "value is required" })
+                    .max(10000, { message: "value is too long" })
+            }),
+        )
+        .mutation(async ({ input, ctx }) => {
+            const createdProject = await prisma.project.create({
+                data: {
+                    userId: ctx.auth.userId,
+                    name: generateSlug(2, {
+                        format: "kebab",
+                    }),
+                    messages: {
+                        create: {
+                            content: input.value,
+                            role: "USER",
+                            type: "RESULT",
+                        }
                     }
                 }
-            }
-        });
-    
-        await inngest.send({
-            name:"code-agent/run",
-            data:{
-                value: input.value,
-                projectId: createdProject.id,
-            }
-        });
-        return createdProject;
-       }),
+            });
+
+            await inngest.send({
+                name: "code-agent/run",
+                data: {
+                    value: input.value,
+                    projectId: createdProject.id,
+                }
+            });
+            
+            return createdProject;
+        }),
 });

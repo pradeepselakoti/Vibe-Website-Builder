@@ -1,7 +1,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { useTheme } from "next-themes"
-import { useSuspenseQuery } from "@tanstack/react-query"
+
 import {
     ChevronDownIcon,
     SunMoonIcon,
@@ -30,9 +30,9 @@ interface Props {
 
 export const ProjectHeader = ({ projectId }: Props) => {
     const trpc = useTRPC();
-    const { data: project } = useSuspenseQuery(
-        trpc.projects.getOne.queryOptions({ id: projectId })
-    );
+    
+    // Use tRPC's built-in suspense query instead
+    const { data: project } = trpc.projects.getOne.useSuspenseQuery({ id: projectId });
 
     const { setTheme, theme } = useTheme();
 
