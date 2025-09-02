@@ -1,6 +1,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { useTheme } from "next-themes"
+import { useQuery } from "@tanstack/react-query"
 
 import {
     ChevronDownIcon,
@@ -31,8 +32,10 @@ interface Props {
 export const ProjectHeader = ({ projectId }: Props) => {
     const trpc = useTRPC();
     
-    // Use the correct tRPC query pattern
-    const { data: project } = trpc.projects.getOne.useQuery({ id: projectId });
+    const { data: project } = useQuery({
+        queryKey: ['projects', 'getOne', { id: projectId }],
+        queryFn: () => trpc.projects.getOne.fetch({ id: projectId }),
+    });
 
     const { setTheme, theme } = useTheme();
 

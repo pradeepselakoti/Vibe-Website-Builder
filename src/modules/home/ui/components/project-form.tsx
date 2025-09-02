@@ -4,9 +4,9 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 import TextareaAutosize from "react-textarea-autosize";
 import { ArrowUpIcon, Loader2Icon } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
 
 import { useTRPC } from "@/trpc/client";
 import { Button } from "@/components/ui/button";
@@ -24,7 +24,6 @@ const formSchema = z.object({
 export const ProjectForm = () => {
   const router = useRouter();
   const trpc = useTRPC();
-  const [isPending, setIsPending] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -33,22 +32,25 @@ export const ProjectForm = () => {
     },
   });
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    try {
-      setIsPending(true);
-      // Use the tRPC client mutation method
-      const project = await trpc.projects.create.mutate(values);
+  const createProject = useMutation({
+    mutationFn: async (values: z.infer<typeof formSchema>) => {
+      return await trpc.projects.create.fetch(values);
+    },
+    onSuccess: (project: { id: string }) => {
       form.reset();
       router.push(`/projects/${project.id}`);
       toast.success("Project created successfully!");
-    } catch (error: any) {
+    },
+    onError: (error: { message?: string }) => {
       toast.error(error.message || "An error occurred");
-    } finally {
-      setIsPending(false);
-    }
+    },
+  });
+
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    createProject.mutate(values);
   };
 
-  const isButtonDisabled = isPending || !form.formState.isValid;
+  const isButtonDisabled = createProject.isPending || !form.formState.isValid;
 
   return (
     <Form {...form}>
@@ -62,7 +64,7 @@ export const ProjectForm = () => {
           render={({ field }) => (
             <TextareaAutosize
               {...field}
-              disabled={isPending}
+              disabled={createProject.isPending}
               minRows={3}
               maxRows={8}
               className="pt-4 resize-none border-none w-full outline-none bg-transparent text-lg"
@@ -90,7 +92,7 @@ export const ProjectForm = () => {
               isButtonDisabled && "bg-muted-foreground border"
             )}
           >
-            {isPending ? (
+            {createProject.isPending ? (
               <Loader2Icon className="size-4 animate-spin" />
             ) : (
               <ArrowUpIcon className="size-4" />
